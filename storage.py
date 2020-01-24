@@ -5,6 +5,8 @@ import glob
 import os
 import requests
 import yaml
+import time
+from absl import logging
 
 
 class PlaceTime(object):
@@ -23,6 +25,8 @@ class WeatherDB(object):
         with open("secrets.yaml") as fh:
             secrets = yaml.load(fh, Loader=yaml.SafeLoader)
             self.key = secrets["key"]
+        self.YAML_TIME = 0
+        self.PANDAS_TIME = 0
 
     def get(self, place):
         if self.has_data(place):
@@ -34,19 +38,7 @@ class WeatherDB(object):
 
 
     def get_hourly_df(self, place):
-        res = self.get(place)
-        offset = res['offset']
-
-        df = (pd.DataFrame
-                .from_records(res['hourly']['data'])                                           
-                .assign(utc_ts= lambda d: pd.to_datetime(d['time'], unit='s'),
-                        local_ts = lambda d: d['utc_ts'] + np.timedelta64(offset, 'h'),
-                        date = lambda d: d['local_ts'].dt.strftime('%Y-%m-%d'),
-                        hour = lambda d: d['local_ts'].dt.hour,
-                        latitide= place.latitude,
-                        longitude=place.longitude,
-                        )
-                [['latitide',
+        my_cols = ['latitide',
                         'longitude',
                         'date',
                         'hour',
@@ -61,8 +53,29 @@ class WeatherDB(object):
                         'precipProbability',
                         'pressure',
                         'summary',
-                        ]]
-                )
+                        ]
+        start = time.time()
+        res = self.get(place)
+        self.YAML_TIME += time.time() - start
+        offset = res['offset']
+
+        start = time.time()
+        df = (pd.DataFrame
+                .from_records(res['hourly']['data'])
+                .assign(utc_ts= lambda d: pd.to_datetime(d['time'], unit='s'),
+                        local_ts = lambda d: d['utc_ts'] + np.timedelta64(offset, 'h'),
+                        date = lambda d: d['local_ts'].dt.strftime('%Y-%m-%d'),
+                        hour = lambda d: d['local_ts'].dt.hour,
+                        latitide= place.latitude,
+                        longitude=place.longitude,
+                        )
+            )
+        self.PANDAS_TIME += time.time() - start
+        if not all(np.isin(my_cols, df.columns)):
+            logging.info("columns missing in response %s", df.columns)
+            return None
+        else:
+            df = df[my_cols]
         return df
 
     def get_from_storage(self, place):
