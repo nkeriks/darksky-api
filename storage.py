@@ -36,40 +36,38 @@ class WeatherDB(object):
             self.put(res, place)
             return res
 
-
     def get_hourly_df(self, place):
-        my_cols = ['latitide',
-                        'longitude',
-                        'date',
-                        'hour',
-                        'icon',
-                        'temperature',
-                        'windSpeed',
-                        'apparentTemperature',
-                        'cloudCover',
-                        'dewPoint',
-                        'humidity',
-                        'precipIntensity',
-                        'precipProbability',
-                        'pressure',
-                        'summary',
-                        ]
+        my_cols = [
+            "latitide",
+            "longitude",
+            "date",
+            "hour",
+            "icon",
+            "temperature",
+            "windSpeed",
+            "apparentTemperature",
+            "cloudCover",
+            "dewPoint",
+            "humidity",
+            "precipIntensity",
+            "precipProbability",
+            "pressure",
+            "summary",
+        ]
         start = time.time()
         res = self.get(place)
         self.YAML_TIME += time.time() - start
-        offset = res['offset']
+        offset = res["offset"]
 
         start = time.time()
-        df = (pd.DataFrame
-                .from_records(res['hourly']['data'])
-                .assign(utc_ts= lambda d: pd.to_datetime(d['time'], unit='s'),
-                        local_ts = lambda d: d['utc_ts'] + np.timedelta64(offset, 'h'),
-                        date = lambda d: d['local_ts'].dt.strftime('%Y-%m-%d'),
-                        hour = lambda d: d['local_ts'].dt.hour,
-                        latitide= place.latitude,
-                        longitude=place.longitude,
-                        )
-            )
+        df = pd.DataFrame.from_records(res["hourly"]["data"]).assign(
+            utc_ts=lambda d: pd.to_datetime(d["time"], unit="s"),
+            local_ts=lambda d: d["utc_ts"] + np.timedelta64(offset, "h"),
+            date=lambda d: d["local_ts"].dt.strftime("%Y-%m-%d"),
+            hour=lambda d: d["local_ts"].dt.hour,
+            latitide=place.latitude,
+            longitude=place.longitude,
+        )
         self.PANDAS_TIME += time.time() - start
         if not all(np.isin(my_cols, df.columns)):
             logging.info("columns missing in response %s", df.columns)
@@ -101,9 +99,11 @@ class WeatherDB(object):
 
     def get_cached_days_for_location(self, latitude, longitude):
         basedir = os.path.join(self.base, "{}_{}".format(latitude, longitude))
-        existing_days = [re.sub('\\.yaml$', '', os.path.basename(x)) for x in glob.glob('{}/*.yaml'.format(basedir))]
+        existing_days = [
+            re.sub("\\.yaml$", "", os.path.basename(x))
+            for x in glob.glob("{}/*.yaml".format(basedir))
+        ]
         return existing_days
-
 
     def put(self, result, place):
         outfile = self.make_path(place)
