@@ -8,6 +8,10 @@ import yaml
 import time
 from absl import logging
 
+PLACES = dict(
+    missoula=(46.83, -114.04), sharon=(42.11, -71.18), san_carlos=(37.49, -122.27),
+)
+
 
 class PlaceTime(object):
     # date should just be a string 'yyyy-mm-hh'
@@ -54,9 +58,15 @@ class WeatherDB(object):
             "pressure",
             "summary",
         ]
+        # missing ['icon' 'precipIntensity' 'precipProbability' 'summary'] for earliest data ~ 1948
+
         start = time.time()
         res = self.get(place)
         self.YAML_TIME += time.time() - start
+        if not "offset" in res or not "hourly" in res:
+            logging.info("missing hourly data for %s", place.date)
+            return None
+
         offset = res["offset"]
 
         start = time.time()
@@ -68,13 +78,17 @@ class WeatherDB(object):
             latitide=place.latitude,
             longitude=place.longitude,
         )
-        self.PANDAS_TIME += time.time() - start
         if not all(np.isin(my_cols, df.columns)):
-            logging.info("columns missing in response %s", df.columns)
-            return None
-        else:
-            df = df[my_cols]
-        return df
+            missing = np.setdiff1d(my_cols, df.columns)
+            logging.debug(
+                "columns missing in response %s for day %s, setting to NA",
+                missing,
+                place.date,
+            )
+            df = df.assign(**{missing_col: np.nan for missing_col in missing})
+        self.PANDAS_TIME += time.time() - start
+
+        return df[my_cols]
 
     def get_from_storage(self, place):
         with open(self.make_path(place)) as fh:
