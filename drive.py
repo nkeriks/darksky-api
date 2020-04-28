@@ -44,7 +44,8 @@ def main(argv):
     dates = [
         x.strftime("%Y-%m-%d")
         for x in pd.date_range(
-            start=pd.datetime(1950, 1, 1), end=pd.datetime(2020, 3, 10)
+            start=pd.datetime(1950, 1, 1),
+            end=datetime.datetime.today().date() - datetime.timedelta(1),
         )
     ]
     api_calls_today = defaultdict(int)
