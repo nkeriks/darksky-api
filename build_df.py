@@ -13,18 +13,21 @@ flags.DEFINE_string("datadir", "data", "location of data cache")
 def main(argv):
     wdb = storage.WeatherDB(FLAGS.datadir)
     lat, lng = storage.PLACES[FLAGS.place]
-    days = wdb.get_cached_days_for_location(lat, lng)  # 42.11, -71.18)
+    days = wdb.get_cached_days_for_location(lat, lng)
     days = sorted(days)
     logging.info("have %s days" % len(days))
     res = [wdb.get_hourly_df(storage.PlaceTime(lat, lng, dt)) for dt in days]
     logging.info("Pandas time %s, yaml time %s", wdb.PANDAS_TIME, wdb.YAML_TIME)
     df = pd.concat(res)
-    logging.info(df)
+    logging.debug(df)
+    max_date = df['date'].max()
+    logging.info("writing data through %s", max_date)
     df.to_csv(
         os.path.join(
             FLAGS.datadir,
-            "{}_asof_{}.csv".format(
-                FLAGS.place, datetime.datetime.today().strftime("%Y%m%d")
+            "{}_through_{}.csv".format(
+                FLAGS.place,
+                max_date
             ),
         )
     )
