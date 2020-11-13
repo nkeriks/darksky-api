@@ -19,7 +19,7 @@ def do_call(date, api_calls_today, wdb):
     lat, lng = storage.PLACES[FLAGS.place]
     place = storage.PlaceTime(lat, lng, date)
     if wdb.has_data(place):
-        logging.info("found %s", date)
+        logging.debug("found %s", date)
         return True
     else:
         if api_calls_today[call_date] < DAILY_LIMIT:

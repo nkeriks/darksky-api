@@ -8,6 +8,7 @@ import storage
 FLAGS = flags.FLAGS
 flags.DEFINE_string("place", "san_carlos", ",".join(storage.PLACES.keys()))
 flags.DEFINE_string("datadir", "data", "location of data cache")
+flags.DEFINE_string("outdir", "summaries", "where to write csv")
 
 
 def main(argv):
@@ -24,8 +25,8 @@ def main(argv):
     logging.info("writing data through %s", max_date)
     df.to_csv(
         os.path.join(
-            FLAGS.datadir,
-            "{}_through_{}.csv".format(
+            FLAGS.outdir,
+            "{}_through_{}.csv.gz".format(
                 FLAGS.place,
                 max_date
             ),
