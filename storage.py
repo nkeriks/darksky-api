@@ -64,7 +64,7 @@ class WeatherDB(object):
         res = self.get(place)
         self.YAML_TIME += time.time() - start
         if not "offset" in res or not "hourly" in res:
-            logging.info("missing hourly data for %s", place.date)
+            logging.debug("missing hourly data for %s", place.date)
             return None
 
         offset = res["offset"]
@@ -92,7 +92,7 @@ class WeatherDB(object):
 
     def get_from_storage(self, place):
         with open(self.make_path(place)) as fh:
-            res = yaml.load(fh, Loader=yaml.SafeLoader)
+            res = yaml.load(fh, Loader=yaml.CLoader)
         return res
 
     def get_from_api(self, place):
