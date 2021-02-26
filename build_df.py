@@ -21,15 +21,11 @@ def main(argv):
     logging.info("Pandas time %s, yaml time %s", wdb.PANDAS_TIME, wdb.YAML_TIME)
     df = pd.concat(res)
     logging.debug(df)
-    max_date = df['date'].max()
+    max_date = df["date"].max()
     logging.info("writing data through %s", max_date)
     df.to_csv(
         os.path.join(
-            FLAGS.outdir,
-            "{}_through_{}.csv.gz".format(
-                FLAGS.place,
-                max_date
-            ),
+            FLAGS.outdir, "{}_through_{}.csv.gz".format(FLAGS.place, max_date),
         )
     )
 
