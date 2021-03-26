@@ -9,7 +9,10 @@ import time
 from absl import logging
 
 PLACES = dict(
-    missoula=(46.83, -114.04), sharon=(42.11, -71.18), san_carlos=(37.49, -122.27),
+    missoula=(46.83, -114.04),
+    sharon=(42.11, -71.18),
+    san_carlos=(37.49, -122.27),
+    givatayim=(32.07, 34.81),
 )
 
 
