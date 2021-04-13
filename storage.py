@@ -13,6 +13,7 @@ PLACES = dict(
     sharon=(42.11, -71.18),
     san_carlos=(37.49, -122.27),
     givatayim=(32.07, 34.81),
+    minneapolis=(44.98, -93.27),
 )
 
 

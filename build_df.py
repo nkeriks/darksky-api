@@ -18,14 +18,16 @@ def main(argv):
     days = sorted(days)
     logging.info("have %s days" % len(days))
     res = [wdb.get_hourly_df(storage.PlaceTime(lat, lng, dt)) for dt in days]
-    logging.info("Pandas time %s, yaml time %s", wdb.PANDAS_TIME, wdb.YAML_TIME)
+    logging.info("Pandas time %.3f, yaml time %.3f", wdb.PANDAS_TIME, wdb.YAML_TIME)
     df = pd.concat(res)
     logging.debug(df)
     max_date = df["date"].max()
+    min_date = df["date"].min()
     logging.info("writing data through %s", max_date)
     df.to_csv(
         os.path.join(
-            FLAGS.outdir, "{}_through_{}.csv.gz".format(FLAGS.place, max_date),
+            FLAGS.outdir,
+            "{}_through_{}_from_{}.csv.gz".format(FLAGS.place, max_date, min_date),
         )
     )
 

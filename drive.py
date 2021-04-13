@@ -41,13 +41,17 @@ def do_call(date, api_calls_today, wdb):
 
 def main(argv):
     # data exists from august 1942 for sharon, ~1950 generally
-    dates = list(reversed([
-        x.strftime("%Y-%m-%d")
-        for x in pd.date_range(
-            start=pd.datetime(1975, 1, 1),
-            end=datetime.datetime.today().date() - datetime.timedelta(1),
+    dates = list(
+        reversed(
+            [
+                x.strftime("%Y-%m-%d")
+                for x in pd.date_range(
+                    start=pd.datetime(1975, 1, 1),
+                    end=datetime.datetime.today().date() - datetime.timedelta(1),
+                )
+            ]
         )
-    ]))
+    )
     api_calls_today = defaultdict(int)
     if FLAGS.skip_today:
         call_date = datetime.datetime.utcnow().strftime("%Y-%m-%d")
