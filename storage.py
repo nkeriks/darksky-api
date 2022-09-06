@@ -7,6 +7,164 @@ import requests
 import yaml
 import time
 from absl import logging
+import sqlite3
+
+DAILY_KEYS = [
+    "location_id",
+    "date_str",
+    "utc_time",
+    "offset",
+    "apparentTemperatureHigh",
+    "apparentTemperatureHighTime",
+    "apparentTemperatureLow",
+    "apparentTemperatureLowTime",
+    "apparentTemperatureMax",
+    "apparentTemperatureMaxTime",
+    "apparentTemperatureMin",
+    "apparentTemperatureMinTime",
+    "cloudCover",
+    "dewPoint",
+    "humidity",
+    "icon",
+    "moonPhase",
+    "ozone",
+    "precipIntensity",
+    "precipIntensityMax",
+    "precipIntensityMaxTime",
+    "precipProbability",
+    "precipType",
+    "pressure",
+    "summary",
+    "sunriseTime",
+    "sunsetTime",
+    "temperatureHigh",
+    "temperatureHighTime",
+    "temperatureLow",
+    "temperatureLowTime",
+    "temperatureMax",
+    "temperatureMaxTime",
+    "temperatureMin",
+    "temperatureMinTime",
+    "uvIndex",
+    "uvIndexTime",
+    "visibility",
+    "windBearing",
+    "windGust",
+    "windGustTime",
+    "windSpeed",
+]
+
+HOURLY_KEYS = [
+    "location_id",
+    "date_str",
+    "hour",
+    "utc_time",
+    "offset",
+    "apparentTemperature",
+    "cloudCover",
+    "dewPoint",
+    "humidity",
+    "icon",
+    "ozone",
+    "precipIntensity",
+    "precipProbability",
+    "precipType",
+    "pressure",
+    "summary",
+    "temperature",
+    "uvIndex",
+    "visibility",
+    "windBearing",
+    "windGust",
+    "windSpeed",
+]
+
+
+class WeatherSQL:
+    def __init__(self, dbname):
+        self.db = sqlite3.connect(dbname)
+
+    def get_and_store(self, location_id, date_str):
+        res = self.get_from_api(location_id, date_str)
+        self.put(res)
+
+    def put(self, location_id, date_str, res):
+        """
+        Note: the results come as a single day in local time, but the timestamps are in utc.
+        So a place that is UTC + 2 will have data from 2am to 2am UTC, midnight to midnight locally.
+        """
+        offset = res["offset"]
+
+        if "daily" in res:
+
+            daily_dict = res["daily"]["data"][0]
+            daily_dict["offset"] = res["offset"]
+            daily_dict["location_id"] = location_id
+            daily_dict["date_str"] = date_str
+            daily_dict["utc_time"] = daily_dict.pop("time")
+
+            extra_keys = set(daily_dict.keys()) - set(DAILY_KEYS)
+            if extra_keys:
+                logging.debug("daily dict has extra keys: %s, dropping", extra_keys)
+                for k in extra_keys:
+                    _ = daily_dict.pop(k)
+
+            daily_key_str = ",".join(daily_dict.keys())
+            daily_val_str = ",".join([":%s" % ky for ky in daily_dict.keys()])
+            query = f"INSERT OR IGNORE INTO daily_weather ( {daily_key_str} ) VALUES ( {daily_val_str} )"
+            self.db.execute(query, daily_dict)
+            self.db.commit()
+        else:
+            logging.info("no daily data for %s, %s", location_id, date_str)
+
+        if "hourly" not in res:
+            logging.info("no hourly data for %s, %s", location_id, date_str)
+            return None
+
+        for hour_dict in res["hourly"]["data"]:
+            hour_dict["offset"] = res["offset"]
+            hour_dict["location_id"] = location_id
+            hour_dict["date_str"] = date_str
+            hour_dict["utc_time"] = hour_dict.pop("time")
+
+            extra_keys = set(hour_dict.keys()) - set(HOURLY_KEYS)
+            if extra_keys:
+                logging.debug("hourly dict has extra keys: %s, dropping", extra_keys)
+                for k in extra_keys:
+                    _ = hour_dict.pop(k)
+
+            hourly_key_str = ",".join(hour_dict.keys())
+            hourly_val_str = ",".join([":%s" % ky for ky in hour_dict.keys()])
+            self.db.execute(
+                f"INSERT OR IGNORE INTO hourly_weather ({hourly_key_str}) VALUES({hourly_val_str})",
+                hour_dict,
+            )
+        self.db.commit()
+
+    def location_to_long_lat(self, location_id):
+        query = "select latitude, longitude from locations where location_id = ?"
+        cur = self.db.execute(query, [location_id])
+        res = cur.fetchall()
+        return res[0]
+
+    def get_from_api(location_id, date_str):
+        url_base = "https://api.darksky.net/forecast/{key}/{latitude},{longitude},{date}T00:00:00?{param}"
+        param = "exclude=currently,minutely,alerts,flags,pass&units=us&lang=en"
+
+        longitude, latitude = self.location_to_long_lat(location_id)
+
+        url = url_base.format(
+            param=param,
+            key=self.key,
+            latitude=latitude,
+            longitude=longitude,
+            date=date_str,
+        )
+
+        res = requests.get(url)
+        res.raise_for_status()
+        return res.json()
+
 
 PLACES = dict(
     missoula=(46.83, -114.04),
@@ -14,6 +172,17 @@ PLACES = dict(
     san_carlos=(37.49, -122.27),
     givatayim=(32.07, 34.81),
     minneapolis=(44.98, -93.27),
+    foglo=(60.01, 20.42),
+)
+
+# for backfill
+LOCATION_IDS = dict(
+    missoula=1,
+    sharon=2,
+    san_carlos=3,
+    givatayim=4,
+    minneapolis=5,
+    foglo=6,
 )
 
 

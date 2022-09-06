@@ -10,6 +10,19 @@ update_some:
 update:
 	. ${VENV}/bin/activate && python drive.py --place $(place) --skip_today
 
+backfill: db
+	#. ${VENV}/bin/activate && python backfill.py --place givatayim 
+	#. ${VENV}/bin/activate && python backfill.py --place missoula
+	. ${VENV}/bin/activate && python backfill.py --place sharon
+	#. ${VENV}/bin/activate && python backfill.py --place san_carlos
+	#. ${VENV}/bin/activate && python backfill.py --place minneapolis
+	#. ${VENV}/bin/activate && python backfill.py --place foglo
+
+db: darksky.sqlite
+
+darksky.sqlite:
+	sqlite3 darksky.sqlite < db_tables.sql
+
 venv: ${VENV}/bin/activate
 
 ${VENV}/bin/activate: requirements.txt

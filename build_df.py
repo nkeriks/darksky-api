@@ -4,25 +4,40 @@ import os
 from absl import logging, app, flags
 import pandas as pd
 import storage
+import sqlite3
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string("place", "san_carlos", ",".join(storage.PLACES.keys()))
-flags.DEFINE_string("datadir", "data", "location of data cache")
+flags.DEFINE_string("database", "darksky.sqlite", "location of database")
 flags.DEFINE_string("outdir", "summaries", "where to write csv")
 
+my_cols = [
+    "latitude",
+    "longitude",
+    "date_str",
+    "hour",
+    "icon",
+    "temperature",
+    "windSpeed",
+    "apparentTemperature",
+    "cloudCover",
+    "dewPoint",
+    "humidity",
+    "precipIntensity",
+    "precipProbability",
+    "pressure",
+    "summary",
+]
 
 def main(argv):
-    wdb = storage.WeatherDB(FLAGS.datadir)
     lat, lng = storage.PLACES[FLAGS.place]
-    days = wdb.get_cached_days_for_location(lat, lng)
-    days = sorted(days)
-    logging.info("have %s days" % len(days))
-    res = [wdb.get_hourly_df(storage.PlaceTime(lat, lng, dt)) for dt in days]
-    logging.info("Pandas time %.3f, yaml time %.3f", wdb.PANDAS_TIME, wdb.YAML_TIME)
-    df = pd.concat(res)
-    logging.debug(df)
-    max_date = df["date"].max()
-    min_date = df["date"].min()
+    db = sqlite3.connect(FLAGS.database)
+    sel_str = ",".join(my_cols)
+    df = pd.read_sql("SELECT %s from hourly_weather hw JOIN locations l ON l.location_id = hw.location_id WHERE l.location_name = '%s'" % (sel_str, FLAGS.place), db)
+
+    logging.debug(df.head())
+    max_date = df["date_str"].max()
+    min_date = df["date_str"].min()
     logging.info("writing data through %s", max_date)
     df.to_csv(
         os.path.join(
