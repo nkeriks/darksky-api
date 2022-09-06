@@ -122,10 +122,16 @@ class WeatherSQL:
             return None
 
         for hour_dict in res["hourly"]["data"]:
+
             hour_dict["offset"] = res["offset"]
             hour_dict["location_id"] = location_id
             hour_dict["date_str"] = date_str
             hour_dict["utc_time"] = hour_dict.pop("time")
+
+            hour_dict["hour"] = (
+                pd.to_datetime(hour_dict["utc_time"], unit="s")
+                + np.timedelta64(hour_dict["offset"], "h")
+            ).hour
 
             extra_keys = set(hour_dict.keys()) - set(HOURLY_KEYS)
             if extra_keys:
@@ -310,6 +316,3 @@ class WeatherDB(object):
             "{}_{}".format(place.latitude, place.longitude),
             "{}.yaml".format(place.date),
         )
-
-    def delete(self, place):
-        pass
