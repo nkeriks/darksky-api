@@ -12,6 +12,9 @@ DAILY_LIMIT = 990
 FLAGS = flags.FLAGS
 flags.DEFINE_string("place", "san_carlos", ",".join(storage.PLACES.keys()))
 flags.DEFINE_bool("skip_today", True, "Wait until tomorrow UTC")
+# It seems that data exists from august 1942 for sharon, ~1950 generally for
+# the US, 1973 for other countries?
+flags.DEFINE_integer("start_year", 1950, "Year to start collection from.")
 
 
 def do_call(date, api_calls_today, wdb):
@@ -40,13 +43,17 @@ def do_call(date, api_calls_today, wdb):
 
 
 def main(argv):
-    # data exists from august 1942 for sharon, ~1950 generally
+    start_year = (
+        FLAGS.start_year
+        if FLAGS.place not in {"givatayim", "foglo"}
+        else max(1973, FLAGS.start_year)
+    )
     dates = list(
         reversed(
             [
                 x.strftime("%Y-%m-%d")
                 for x in pd.date_range(
-                    start=pd.datetime(1975, 1, 1),
+                    start=datetime.datetime(start_year, 1, 1),
                     end=datetime.datetime.today().date() - datetime.timedelta(1),
                 )
             ]
