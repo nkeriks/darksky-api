@@ -1,3 +1,4 @@
+# Because I forgot to add the hour column to the database in the backfill
 from absl import logging, app, flags
 import sqlite3
 
