@@ -38,7 +38,7 @@ get_weatherfile <- function(location, base='/home/neriksson/base/nke/darksky-api
     loginfo("reading %s", inf)
 
     read_csv(inf, col_types='innDicnnnnnnnnnc') %>%
-        select(-X1) %>%
+        select(-...1) %>%
         mutate(
             year=year(date),
             doy=yday(date),
