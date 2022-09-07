@@ -83,10 +83,13 @@ HOURLY_KEYS = [
 class WeatherSQL:
     def __init__(self, dbname):
         self.db = sqlite3.connect(dbname)
+        with open("secrets.yaml") as fh:
+            secrets = yaml.load(fh, Loader=yaml.SafeLoader)
+            self.key = secrets["key"]
 
     def get_and_store(self, location_id, date_str):
         res = self.get_from_api(location_id, date_str)
-        self.put(res)
+        self.put(location_id, date_str, res)
 
     def put(self, location_id, date_str, res):
         """
@@ -148,12 +151,12 @@ class WeatherSQL:
         self.db.commit()
 
     def location_to_long_lat(self, location_id):
-        query = "select latitude, longitude from locations where location_id = ?"
+        query = "select longitude, latitude from locations where location_id = ?"
         cur = self.db.execute(query, [location_id])
         res = cur.fetchall()
         return res[0]
 
-    def get_from_api(location_id, date_str):
+    def get_from_api(self, location_id, date_str):
         url_base = "https://api.darksky.net/forecast/{key}/{latitude},{longitude},{date}T00:00:00?{param}"
         param = "exclude=currently,minutely,alerts,flags,pass&units=us&lang=en"
 

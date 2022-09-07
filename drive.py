@@ -19,7 +19,7 @@ flags.DEFINE_integer("start_year", 1950, "Year to start collection from.")
 flags.DEFINE_string("database", "darksky.sqlite", "location of database")
 
 
-def do_call(wdb, location_id, date, api_calls_today):
+def do_call(wdb, location_id, date_str, api_calls_today):
 
     call_date = datetime.datetime.utcnow().strftime("%Y-%m-%d")
 
@@ -27,7 +27,7 @@ def do_call(wdb, location_id, date, api_calls_today):
         api_calls_today[call_date] += 1
         logging.info(
             "calling api for %s (%s calls on %s)",
-            date,
+            date_str,
             api_calls_today[call_date],
             call_date,
         )
@@ -35,7 +35,7 @@ def do_call(wdb, location_id, date, api_calls_today):
         return True
     else:
         logging.info(
-            "want %s, but reached limit for today = %s, sleeping", date, call_date
+            "want %s, but reached limit for today = %s, sleeping", date_str, call_date
         )
         time.sleep(3600)
         return False
@@ -43,7 +43,7 @@ def do_call(wdb, location_id, date, api_calls_today):
 
 def main(argv):
 
-    wdb = WeatherSQL(FLAGS.database)
+    wdb = storage.WeatherSQL(FLAGS.database)
 
     start_year = (
         FLAGS.start_year
@@ -75,7 +75,7 @@ def main(argv):
     WHERE date NOT IN (SELECT dt FROM existing);
     """
 
-    dates = pd.read_sql(day_query, wdb.db)
+    dates = pd.read_sql(day_query, wdb.db)['date'].to_numpy()
 
     api_calls_today = defaultdict(int)
     if FLAGS.skip_today:
@@ -84,7 +84,7 @@ def main(argv):
         api_calls_today[call_date] = DAILY_LIMIT
         logging.info(api_calls_today)
 
-    location_id = storage.LOCATION_IDS(FLAGS.place)
+    location_id = storage.LOCATION_IDS[FLAGS.place]
     logging.info("%s dates to do", len(dates))
 
     idx = 0
