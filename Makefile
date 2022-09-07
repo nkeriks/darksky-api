@@ -1,6 +1,5 @@
 VENV=ds
 
-
 dataset:
 	. ${VENV}/bin/activate && python build_df.py --place $(place)
 
@@ -11,12 +10,7 @@ update:
 	. ${VENV}/bin/activate && python drive.py --place $(place) --skip_today
 
 backfill: db
-	#. ${VENV}/bin/activate && python backfill.py --place givatayim 
-	#. ${VENV}/bin/activate && python backfill.py --place missoula
-	. ${VENV}/bin/activate && python backfill.py --place sharon
-	#. ${VENV}/bin/activate && python backfill.py --place san_carlos
-	#. ${VENV}/bin/activate && python backfill.py --place minneapolis
-	#. ${VENV}/bin/activate && python backfill.py --place foglo
+	. ${VENV}/bin/activate && python backfill.py --place $(place)
 
 db: darksky.sqlite
 
