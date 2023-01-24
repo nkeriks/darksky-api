@@ -133,7 +133,7 @@ class WeatherSQL:
 
             hour_dict["hour"] = (
                 pd.to_datetime(hour_dict["utc_time"], unit="s")
-                + np.timedelta64(hour_dict["offset"], "h")
+                + np.timedelta64(int(hour_dict["offset"] * 60 * 60), "s")
             ).hour
 
             extra_keys = set(hour_dict.keys()) - set(HOURLY_KEYS)
@@ -257,7 +257,7 @@ class WeatherDB(object):
         start = time.time()
         df = pd.DataFrame.from_records(res["hourly"]["data"]).assign(
             utc_ts=lambda d: pd.to_datetime(d["time"], unit="s"),
-            local_ts=lambda d: d["utc_ts"] + np.timedelta64(offset, "h"),
+            local_ts=lambda d: d["utc_ts"] + np.timedelta64(int(offset * 60 * 60), "s"),
             date=lambda d: d["local_ts"].dt.strftime("%Y-%m-%d"),
             hour=lambda d: d["local_ts"].dt.hour,
             latitide=place.latitude,
