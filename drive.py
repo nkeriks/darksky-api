@@ -51,7 +51,7 @@ def main(argv):
         if FLAGS.place not in {"givatayim", "foglo", "zurich", "selje", "singapore"}
         else max(1973, FLAGS.start_year)
     )
-    if FLAGS.place == 'selje':
+    if FLAGS.place == "selje":
         start_year = max(1990, FLAGS.start_year)
 
     start_dt = "%s-01-01" % start_year
@@ -80,7 +80,7 @@ def main(argv):
         WHERE date NOT IN (SELECT dt FROM existing);
         """
 
-        dates = pd.read_sql(day_query, wdb.db)['date'].to_numpy()
+        dates = pd.read_sql(day_query, wdb.db)["date"].to_numpy()
     else:
         day_query = f"""
         WITH RECURSIVE dates(date) AS (
@@ -111,7 +111,7 @@ def main(argv):
             date NOT IN (SELECT dt FROM existing)
             ;
         """
-        dates = pd.read_sql(day_query, wdb.db)['date'].to_numpy()
+        dates = pd.read_sql(day_query, wdb.db)["date"].to_numpy()
 
     api_calls_today = defaultdict(int)
     if FLAGS.skip_today:
