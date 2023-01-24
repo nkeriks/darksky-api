@@ -192,6 +192,9 @@ LOCATION_IDS = dict(
     givatayim=4,
     minneapolis=5,
     foglo=6,
+    zurich=7,
+    selje=8,
+    singapore=9,
 )
 
 
